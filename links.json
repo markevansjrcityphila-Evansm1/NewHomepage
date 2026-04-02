@@ -1,21 +1,123 @@
 [
   {
-    "name": "Posse Production",
-    "emoji": "🏢",
+    "name": "Atlas",
+    "emoji": "🗺️",
+    "url": "https://atlas.phila.gov/"
+  },
+  {
+    "name": "Operations",
+    "emoji": "💼",
     "children": [
       {
-        "name": "Production Internal",
-        "url": "https://eclipseprod.phila.gov/phillylmsprod/int/lms/"
-      },
-      {
-        "name": "Production Public",
-        "url": "https://eclipse.phila.gov/phillylmsprod/pub/lms/"
+        "name": "Posse",
+        "emoji": "🖥️",
+        "children": [
+          {
+            "name": "Production",
+            "emoji": "🏢",
+            "children": [
+              {
+                "name": "Internal Production",
+                "url": "https://eclipseprod.phila.gov/phillylmsprod/int/lms/",
+                "emoji": "💻"
+              },
+              {
+                "name": "Config Production",
+                "url": "https://eclipseprod.phila.gov/phillylmsprod/int/config/Login.aspx",
+                "emoji": "⚙️"
+              },
+              {
+                "name": "Public Production",
+                "url": "https://eclipse.phila.gov/phillylmsprod/pub/lms/Login.aspx",
+                "emoji": "🚻"
+              }
+            ]
+          },
+          {
+            "name": "Test",
+            "emoji": "🧪",
+            "children": [
+              {
+                "name": "Internal Test",
+                "url": "https://eclipsetest-int.phila.gov/phluatest/int/lms/#menuPaneUseKey=1013343_2",
+                "emoji": null
+              },
+              {
+                "name": "Public Test",
+                "url": "https://eclipsetest-ext.phila.gov/phluatest/pub/lms/Login.aspx",
+                "emoji": null
+              },
+              {
+                "name": "Config Test",
+                "url": "https://eclipsetest-int.phila.gov/phluatest/int/config/Login.aspx",
+                "emoji": null
+              }
+            ]
+          },
+          {
+            "name": "Training",
+            "emoji": "🏋️",
+            "children": [
+              {
+                "name": "Internal Training",
+                "url": "https://eclipsetest-int.phila.gov/phltraining/int/lms/#menuPaneUseKey=1013343_2",
+                "emoji": null
+              },
+              {
+                "name": "Public Training",
+                "url": "https://eclipsetest-ext.phila.gov/phltraining/pub/lms/Login.aspx",
+                "emoji": null
+              },
+              {
+                "name": "Config Training",
+                "url": "https://eclipsetest-int.phila.gov/phltraining/int/config/Login.aspx",
+                "emoji": null
+              },
+              {
+                "name": "WebUi",
+                "url": "https://eclipsetest-ext.phila.gov/phltraining/pub/webui/#",
+                "emoji": null
+              }
+            ]
+          }
+        ]
       }
     ]
   },
   {
-    "name": "Atlas",
+    "name": "Maps",
     "emoji": "🗺️",
-    "url": "https://atlas.phila.gov/"
+    "children": [
+      {
+        "name": "Atlas",
+        "url": "https://atlas.phila.gov/",
+        "emoji": "📍"
+      },
+      {
+        "name": "Building ID Map",
+        "url": "https://experience.arcgis.com/experience/c549d7835c00492cb95477c773958c3a",
+        "emoji": "🏬"
+      },
+      {
+        "name": "Street Closure Map",
+        "url": "https://phl.maps.arcgis.com/apps/webappviewer/index.html?id=e41853e3f1374df5aecc7f4dd09a55d4",
+        "emoji": "🚧"
+      },
+      {
+        "name": "Open Maps",
+        "url": "https://openmaps.phila.gov/",
+        "emoji": "🌍"
+      },
+      {
+        "name": "Inspector Assignment Map",
+        "url": "https://phl.maps.arcgis.com/home/index.html",
+        "emoji": "🕵️"
+      },
+      {
+        "name": "Waterways Map",
+        "url": "https://phl.maps.arcgis.com/home/index.html",
+        "emoji": "🌊"
+      }
+    ]
   }
 ]

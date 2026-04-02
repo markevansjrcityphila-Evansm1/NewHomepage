@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mark's Homepage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #3f3f46; }
+      ::-webkit-scrollbar-thumb { background: #71717a; border-radius: 10px; }
+      .modal-active { display: flex !important; }
+      .active-form { animation: slideDown 0.3s ease-out; }
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      #detail-body { white-space: pre-wrap; }
+      .edit-row {
+        animation: slideDown 0.2s ease-out;
+        background: #1e293b;
+        border: 1px dashed #3b82f6;
+        border-radius: 12px;
+        padding: 10px;
+        margin-top: 4px;
+      }
+      .edit-row input {
+        background: #0f172a;
+        border: 1px solid #475569;
+        border-radius: 8px;
+        color: white;
+        padding: 4px 8px;
+        font-size: 12px;
+        outline: none;
+        width: 100%;
+      }
+      .edit-row input:focus { border-color: #3b82f6; }
+      #gh-panel { animation: slideDown 0.25s ease-out; }
+
+      /* ── Standalone Calendar ── */
+      #cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+      }
+      .cal-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: background 0.15s;
+        user-select: none;
+      }
+      .cal-day:hover { background: #475569; }
+      .cal-day.today {
+        background: #2563eb;
+        color: white;
+        font-weight: bold;
+      }
+      .cal-day.selected {
+        background: #0ea5e9;
+        color: white;
+        font-weight: bold;
+      }
+      .cal-day.other-month { color: #4b5563; }
+      .cal-day.weekend { color: #f59e0b; }
+      .cal-day.today.weekend { color: white; }
+    </style>
+  </head>
+  <body class="bg-zinc-700 min-h-screen flex flex-col font-sans">
+
+    <!-- ADD / EDIT ITEM MODAL -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4 text-white">
+      <div class="bg-slate-800 w-full max-w-md p-6 rounded-2xl ring-2 ring-blue-500 shadow-2xl">
+        <h2 id="modal-title" class="text-2xl font-bold mb-4">Add New Item</h2>
+        <div class="space-y-4 text-left">
+          <div>
+            <label class="block text-slate-400 text-sm mb-1">Display Name</label>
+            <input type="text" id="input-name" class="w-full p-2 rounded bg-zinc-900 text-white border border-slate-600 outline-none focus:ring-2 ring-blue-400" />
+          </div>
+          <div id="url-field">
+            <label class="block text-slate-400 text-sm mb-1">URL</label>
+            <input type="text" id="input-url" placeholder="https://..." class="w-full p-2 rounded bg-zinc-900 text-white border border-slate-600 outline-none focus:ring-2 ring-blue-400" />
+          </div>
+          <div>
+            <label class="block text-slate-400 text-sm mb-1">Icon / Emoji</label>
+            <input type="text" id="input-emoji" placeholder="🔗 or 📂" class="w-full p-2 rounded bg-zinc-900 text-white border border-slate-600 outline-none focus:ring-2 ring-blue-400" />
+          </div>
+          <div class="flex gap-3 pt-4">
+            <button onclick="closeModal()" class="flex-1 py-2 bg-slate-600 rounded-xl hover:bg-slate-500">Cancel</button>
+            <button onclick="saveFromModal()" class="flex-1 py-2 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 text-white">Save Item</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTE / REMINDER DETAIL MODAL -->
+    <div id="detail-modal" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center p-4 text-white">
+      <div class="bg-slate-800 w-full max-w-2xl p-8 rounded-2xl ring-2 ring-blue-500 shadow-2xl relative">
+        <button onclick="closeDetail()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl">✕</button>
+        <div id="detail-header" class="border-b border-slate-700 pb-4 mb-4">
+          <h2 id="detail-title" class="text-3xl font-bold text-blue-400"></h2>
+          <p id="detail-meta" class="text-slate-500 text-sm mt-2 font-mono"></p>
+        </div>
+        <div id="detail-body" class="max-h-[60vh] overflow-y-auto text-lg leading-relaxed text-slate-200 pr-2"></div>
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <nav class="flex justify-between bg-slate-600 text-3xl p-3 font-bold text-white shadow-xl border-2 border-stone-400">
+      <span class="cursor-pointer hover:text-blue-300 transition-colors" onclick="resetMain()">Mark's Homepage</span>
+      <ul class="flex gap-6 text-xl items-center">
+        <li class="cursor-pointer hover:text-blue-300" onclick="fetchAndDisplay('Notes')">Notes</li>
+        <li class="cursor-pointer hover:text-blue-300" onclick="fetchAndDisplay('Reminders')">Reminders</li>
+        <li class="cursor-pointer hover:text-blue-300"><a href="https://phl-cao.quickbase.com/nav/app/bu9dn5ktp/action/appoverview?from=myqb" target="_blank" rel="noopener noreferrer">Quickbase</a></li>
+      </ul>
+    </nav>
+
+    <!-- DATETIME -->
+    <div class="bg-zinc-700 text-center py-4 text-6xl text-white font-light pb-6">
+      <span id="datetime"></span>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="flex justify-center pb-6 bg-zinc-700">
+      <form action="https://www.google.com/search" method="GET" class="w-full max-w-xl px-4">
+        <input type="text" name="q" placeholder="Search Google..."
+          class="w-full p-4 rounded-full text-black text-lg outline-none shadow-2xl focus:ring-4 ring-blue-500/50 transition-all" />
+      </form>
+    </div>
+
+    <!-- MAIN GRID -->
+    <section class="grid grid-cols-8 gap-6 px-6 mb-6 flex-grow">
+
+      <!-- QUICK LINKS SIDEBAR -->
+      <aside class="bg-slate-700 col-span-2 p-4 rounded-2xl ring-4 ring-stone-400 flex flex-col shadow-xl h-fit text-white">
+        <div id="edit-controls" class="mb-4 flex gap-2 hidden">
+          <button onclick="openModal('folder')" class="bg-amber-500 text-slate-50 px-2 py-1 rounded-full text-xs flex-1 hover:ring-2 hover:ring-stone-300">＋ Folder</button>
+          <button onclick="openModal('link')"   class="bg-blue-500 text-slate-50 px-2 py-1 rounded-full text-xs flex-1 hover:ring-2 hover:ring-stone-300">＋ Link</button>
+          <button onclick="toggleEditMode()"    class="bg-red-500 text-slate-50 px-2 py-1 rounded-full text-xs flex-1 hover:ring-2 hover:ring-stone-300">Done</button>
+        </div>
+        <button id="edit-mode-btn" onclick="toggleEditMode()"
+          class="mb-4 w-full bg-slate-600 text-slate-300 py-1 rounded-full border border-slate-500 text-sm hover:bg-slate-500">
+          Edit Layout
+        </button>
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-2xl font-bold tracking-tight">Quick Links</h2>
+          <div class="flex items-center gap-2">
+            <button id="back-btn" class="hidden bg-stone-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-stone-400">← Back</button>
+            <button onclick="toggleGhPanel()" title="GitHub Sync Settings"
+              class="text-slate-400 hover:text-white text-lg transition-colors" id="gh-gear-btn">⚙️</button>
+          </div>
+        </div>
+
+        <!-- GitHub Settings Panel -->
+        <div id="gh-panel" class="hidden mb-4 bg-slate-800 rounded-xl p-4 border border-slate-600 space-y-3 text-sm">
+          <p class="text-blue-400 font-bold uppercase tracking-widest text-xs">GitHub Sync</p>
+          <div>
+            <label class="block text-slate-400 text-xs mb-1">Personal Access Token</label>
+            <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx"
+              class="w-full p-2 rounded bg-zinc-900 text-white border border-slate-600 outline-none focus:ring-2 ring-blue-400 text-xs font-mono" />
+          </div>
+          <div>
+            <label class="block text-slate-400 text-xs mb-1">Repo (owner/repo)</label>
+            <input type="text" id="gh-repo" placeholder="markward/homepage"
+              class="w-full p-2 rounded bg-zinc-900 text-white border border-slate-600 outline-none focus:ring-2 ring-blue-400 text-xs font-mono" />
+          </div>
+          <div>
+            <label class="block text-slate-400 text-xs mb-1">File Path in Repo</label>
+            <input type="text" id="gh-path" placeholder="links.json"
+              class="w-full p-2 rounded bg-zinc-900 text-white border border-slate-600 outline-none focus:ring-2 ring-blue-400 text-xs font-mono" />
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="saveGhSettings()" class="flex-1 py-2 bg-slate-600 text-white rounded-lg text-xs font-bold hover:bg-slate-500">💾 Save Settings</button>
+            <button onclick="pushToGithub()" class="flex-1 py-2 bg-green-700 text-white rounded-lg text-xs font-bold hover:bg-green-600">
+              <span id="gh-push-label">⬆️ Push Links</span>
+            </button>
+          </div>
+          <p id="gh-status" class="text-xs text-center text-slate-500 hidden"></p>
+        </div>
+
+        <ul id="link-container" class="space-y-3 w-full max-h-[500px] overflow-y-auto pr-1"></ul>
+      </aside>
+
+      <!-- MAIN CENTER -->
+      <main class="bg-slate-700 col-span-4 p-6 rounded-2xl ring-4 ring-stone-400 shadow-xl flex flex-col min-h-[650px] relative">
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <button onclick="showNoteForm()"
+            class="group p-6 bg-slate-600 rounded-2xl border-2 border-slate-500 hover:border-blue-400 hover:bg-slate-500 transition-all flex flex-col items-center gap-2">
+            <span class="text-4xl group-hover:scale-110 transition-transform">📝</span>
+            <span class="text-white font-bold tracking-widest uppercase text-xs">Add Note</span>
+          </button>
+          <button onclick="showReminderForm()"
+            class="group p-6 bg-slate-600 rounded-2xl border-2 border-slate-500 hover:border-yellow-400 hover:bg-slate-500 transition-all flex flex-col items-center gap-2">
+            <span class="text-4xl group-hover:scale-110 transition-transform">🔔</span>
+            <span class="text-white font-bold tracking-widest uppercase text-xs">Add Reminder</span>
+          </button>
+        </div>
+        <div id="form-display" class="flex-grow overflow-y-auto max-h-[800px] pr-2">
+          <div class="flex flex-col items-center justify-center mt-24 text-slate-500 opacity-30 italic">
+            <p class="text-xl uppercase tracking-widest">System Ready</p>
+          </div>
+        </div>
+      </main>
+
+      <!-- RIGHT COLUMN -->
+      <div class="grid grid-rows-3 col-span-2 gap-4 text-white">
+
+        <!-- ── STANDALONE CALENDAR ── -->
+        <div class="bg-slate-700 p-3 rounded-2xl ring-4 ring-stone-400 flex flex-col shadow-xl">
+          <!-- Header: prev / month+year / next -->
+          <div class="flex items-center justify-between mb-2">
+            <button onclick="calNav(-1)" class="text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-600 transition-colors text-lg">‹</button>
+            <div class="text-center">
+              <div id="cal-month-label" class="font-bold text-sm text-white"></div>
+            </div>
+            <button onclick="calNav(1)" class="text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-600 transition-colors text-lg">›</button>
+          </div>
+          <!-- Day-of-week headers -->
+          <div class="grid grid-cols-7 gap-[2px] mb-1">
+            <div class="text-center text-[10px] font-bold text-yellow-500">Su</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">Mo</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">Tu</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">We</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">Th</div>
+            <div class="text-center text-[10px] font-bold text-slate-400">Fr</div>
+            <div class="text-center text-[10px] font-bold text-yellow-500">Sa</div>
+          </div>
+          <!-- Day grid -->
+          <div id="cal-grid"></div>
+          <!-- Selected date readout -->
+          <div id="cal-selected" class="mt-2 text-center text-xs text-slate-400 min-h-[16px]"></div>
+        </div>
+
+        <!-- MAPS -->
+        <div class="bg-slate-700 p-4 rounded-2xl ring-4 ring-stone-400 shadow-xl">
+          <h2 class="text-xl font-bold mb-2 text-center">Maps</h2>
+          <form onsubmit="updateMap(event)">
+            <input type="text" id="mapInput" placeholder="Address search..."
+              class="w-full p-2 rounded bg-zinc-800 text-white text-sm outline-none border border-slate-600 focus:ring-2 ring-blue-500 transition-all" />
+          </form>
+          <iframe id="mapFrame" class="w-full h-72 mt-2 rounded border-0" src="https://maps.google.com/maps?q=Philadelphia,PA&output=embed&hl=en"></iframe>        </div>
+
+        <!-- WEATHER -->
+        <div class="bg-slate-700 p-4 rounded-2xl ring-4 ring-stone-400 shadow-xl overflow-hidden">
+          <h2 class="text-xl font-bold mb-2 text-center">Weather</h2>
+          <a class= "weatherwidget-io" href="https://forecast7.com/en/39d95n75d17/philadelphia/?unit=us"
+            data-label_1="PHILADELPHIA" data-label_2="WEATHER" data-theme="original">PHILADELPHIA WEATHER</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="bg-stone-500 p-3 text-center text-white font-bold uppercase tracking-widest text-xs">
+      Mark's Dashboard
+    </footer>
+
+    <script>
+      // =============================================
+      // CONFIG
+      // =============================================
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOm-RAaxE-xjw8ie4N-catSkWVyWsnQrSm0wYKmxyl_WmcLd2UylS7Od6Ts4e4yvyUag/exec";
+
+      let rawData = [];
+      let currentSheet = "";
+
+      // =============================================
+      // DATE FORMATTERS
+      // =============================================
+      function fmtDate(raw) {
+        if (!raw || raw === "None" || raw === "N/A") return raw || "None";
+        const d = new Date(raw);
+        if (isNaN(d)) return raw;
+        return d.toLocaleString("en-US", {
+          month: "numeric", day: "numeric", year: "2-digit",
+          hour: "numeric", minute: "2-digit", hour12: true,
+        });
+      }
+      function fmtDueDate(raw) {
+        if (!raw || raw === "None" || raw === "N/A") return raw || "None";
+        const d = new Date(raw);
+        if (isNaN(d)) return raw;
+        return d.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "2-digit" });
+      }
+
+      // =============================================
+      // STANDALONE CALENDAR
+      // =============================================
+      const MONTH_NAMES = ["January","February","March","April","May","June",
+                           "July","August","September","October","November","December"];
+      const DAY_NAMES   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+      let calDate     = new Date();          // tracks which month is displayed
+      let calSelected = null;               // Date object of clicked day
+
+      function calNav(dir) {
+        calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1);
+        renderCal();
+      }
+
+      function renderCal() {
+        const today = new Date();
+        const yr    = calDate.getFullYear();
+        const mo    = calDate.getMonth();
+
+        document.getElementById("cal-month-label").textContent =
+          `${MONTH_NAMES[mo]} ${yr}`;
+
+        const grid      = document.getElementById("cal-grid");
+        grid.innerHTML  = "";
+
+        const firstDay  = new Date(yr, mo, 1).getDay();   // 0=Sun
+        const daysInMo  = new Date(yr, mo + 1, 0).getDate();
+        const daysInPrev= new Date(yr, mo, 0).getDate();
+
+        // Previous month tail
+        for (let i = firstDay - 1; i >= 0; i--) {
+          grid.appendChild(makeDay(daysInPrev - i, mo - 1, yr, true));
+        }
+        // Current month
+        for (let d = 1; d <= daysInMo; d++) {
+          grid.appendChild(makeDay(d, mo, yr, false));
+        }
+        // Next month lead to fill grid to multiple of 7
+        const total = firstDay + daysInMo;
+        const remainder = total % 7 === 0 ? 0 : 7 - (total % 7);
+        for (let d = 1; d <= remainder; d++) {
+          grid.appendChild(makeDay(d, mo + 1, yr, true));
+        }
+      }
+
+      function makeDay(dayNum, mo, yr, otherMonth) {
+        // Normalise month overflow so dates resolve correctly
+        const dateObj = new Date(yr, mo, dayNum);
+        const realYr  = dateObj.getFullYear();
+        const realMo  = dateObj.getMonth();
+        const realDay = dateObj.getDate();
+        const dow     = dateObj.getDay();  // 0=Sun, 6=Sat
+
+        const today   = new Date();
+        const isToday = realYr === today.getFullYear() &&
+                        realMo === today.getMonth()    &&
+                        realDay === today.getDate();
+
+        const isSel   = calSelected &&
+                        realYr === calSelected.getFullYear() &&
+                        realMo === calSelected.getMonth()    &&
+                        realDay === calSelected.getDate();
+
+        const div = document.createElement("div");
+        div.className = "cal-day" +
+          (otherMonth ? " other-month" : "") +
+          (isToday    ? " today"       : "") +
+          (isSel      ? " selected"    : "") +
+          (!isToday && !isSel && (dow === 0 || dow === 6) ? " weekend" : "");
+
+        div.textContent = realDay;
+        div.title = `${DAY_NAMES[dow]}, ${MONTH_NAMES[realMo]} ${realDay}, ${realYr}`;
+
+        div.onclick = () => {
+          calSelected = dateObj;
+          document.getElementById("cal-selected").textContent =
+            `${DAY_NAMES[dow]}, ${MONTH_NAMES[realMo]} ${realDay}, ${realYr}`;
+          renderCal();
+        };
+        return div;
+      }
+
+      // =============================================
+      // LINKS TREE
+      // =============================================
+      let linksTree = [
+        {
+          name: "Posse Production", emoji: "🏢",
+          children: [
+            { name: "Production Internal", url: "https://eclipseprod.phila.gov/phillylmsprod/int/lms/" },
+            { name: "Production Public",   url: "https://eclipse.phila.gov/phillylmsprod/pub/lms/" },
+          ],
+        },
+        { name: "Atlas", emoji: "🗺️", url: "https://atlas.phila.gov/" },
+      ];
+
+      let currentLevel = linksTree;
+      let navHistory   = [];
+      let isEditMode   = false;
+      let modalMode    = "link";
+      let editingIndex = null;
+
+      const container   = document.getElementById("link-container");
+      const backBtn     = document.getElementById("back-btn");
+      const modal       = document.getElementById("modal-overlay");
+      const formDisplay = document.getElementById("form-display");
+
+      // =============================================
+      // GITHUB SETTINGS
+      // =============================================
+      function loadGhSettings() {
+        const saved = localStorage.getItem("gh_settings");
+        if (saved) {
+          const s = JSON.parse(saved);
+          document.getElementById("gh-token").value = s.token || "";
+          document.getElementById("gh-repo").value  = s.repo  || "";
+          document.getElementById("gh-path").value  = s.path  || "";
+        }
+      }
+      function saveGhSettings() {
+        const s = {
+          token: document.getElementById("gh-token").value.trim(),
+          repo:  document.getElementById("gh-repo").value.trim(),
+          path:  document.getElementById("gh-path").value.trim(),
+        };
+        localStorage.setItem("gh_settings", JSON.stringify(s));
+        showGhStatus("✅ Settings saved!", "text-green-400");
+      }
+      function getGhSettings() {
+        const saved = localStorage.getItem("gh_settings");
+        return saved ? JSON.parse(saved) : {};
+      }
+      function toggleGhPanel() {
+        const panel = document.getElementById("gh-panel");
+        panel.classList.toggle("hidden");
+        if (!panel.classList.contains("hidden")) loadGhSettings();
+      }
+      function showGhStatus(msg, cls = "text-slate-400") {
+        const el = document.getElementById("gh-status");
+        el.className = `text-xs text-center ${cls}`;
+        el.textContent = msg;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), 4000);
+      }
+
+      // =============================================
+      // PUSH TO GITHUB
+      // =============================================
+      async function pushToGithub() {
+        const { token, repo, path } = getGhSettings();
+        if (!token || !repo || !path) {
+          showGhStatus("⚠️ Fill in all GitHub settings first.", "text-yellow-400");
+          return;
+        }
+        const label = document.getElementById("gh-push-label");
+        label.textContent = "⏳ Pushing...";
+        try {
+          const apiBase = `https://api.github.com/repos/${repo}/contents/${path}`;
+          const getRes  = await fetch(apiBase, {
+            headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+          });
+          let sha = null;
+          if (getRes.ok) sha = (await getRes.json()).sha;
+          else if (getRes.status !== 404) throw new Error(`GitHub GET failed: ${getRes.status}`);
+          const content = btoa(unescape(encodeURIComponent(JSON.stringify(linksTree, null, 2))));
+          const putRes  = await fetch(apiBase, {
+            method: "PUT",
+            headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
+            body: JSON.stringify({ message: `chore: update quick links [${new Date().toLocaleString()}]`, content, ...(sha ? { sha } : {}) }),
+          });
+          if (!putRes.ok) { const err = await putRes.json(); throw new Error(err.message || putRes.status); }
+          label.textContent = "⬆️ Push Links";
+          showGhStatus("✅ Pushed to GitHub!", "text-green-400");
+        } catch (err) {
+          label.textContent = "⬆️ Push Links";
+          showGhStatus(`❌ Error: ${err.message}`, "text-red-400");
+        }
+      }
+
+      // =============================================
+      // RENDER LINKS
+      // =============================================
+      function renderLinks(data) {
+        container.innerHTML = "";
+        backBtn.classList.toggle("hidden", navHistory.length === 0);
+        editingIndex = null;
+        data.forEach((item, index) => {
+          const isFolder = !!item.children;
+          const icon     = item.emoji || (isFolder ? "📂" : "🔗");
+          const li       = document.createElement("li");
+          li.dataset.index = index;
+          const rowDiv = document.createElement("div");
+          rowDiv.className = `group relative flex items-center gap-3 border-2 ${
+            isEditMode ? "border-dashed border-blue-400" : "border-gray-500"
+          } p-3 rounded-2xl w-full cursor-pointer hover:bg-slate-600 transition-all text-white`;
+          rowDiv.innerHTML = `
+            <span class="text-xl">${icon}</span>
+            <span class="flex-grow text-lg font-medium truncate">${item.name}</span>
+            ${isEditMode ? `
+              <div class="flex gap-1 shrink-0" onclick="event.stopPropagation()">
+                <button onclick="moveItem(${index}, -1)" title="Move up"   class="bg-slate-500 p-1 rounded text-xs hover:bg-blue-400">↑</button>
+                <button onclick="moveItem(${index}, 1)"  title="Move down" class="bg-slate-500 p-1 rounded text-xs hover:bg-blue-400">↓</button>
+                <button onclick="startInlineEdit(${index})" title="Edit"   class="bg-yellow-600 p-1 rounded text-xs hover:bg-yellow-500">✏️</button>
+                <button onclick="deleteItem(${index})"  title="Delete"     class="bg-red-600 p-1 rounded text-xs hover:bg-red-500">✕</button>
+              </div>` : ""}
+          `;
+          if (!isEditMode) {
+            rowDiv.onclick = () => {
+              if (isFolder) { navHistory.push(currentLevel); currentLevel = item.children; renderLinks(currentLevel); }
+              else window.open(item.url, "_blank");
+            };
+          }
+          li.appendChild(rowDiv);
+          if (isEditMode) {
+            const editDiv = document.createElement("div");
+            editDiv.id        = `edit-row-${index}`;
+            editDiv.className = "edit-row hidden mt-2 space-y-2";
+            editDiv.innerHTML = `
+              <div class="flex gap-2">
+                <div class="flex-1">
+                  <label class="text-slate-400 text-[10px] uppercase tracking-widest block mb-1">Name</label>
+                  <input type="text" id="ei-name-${index}" value="${escAttr(item.name)}" placeholder="Display name" />
+                </div>
+                <div class="w-20">
+                  <label class="text-slate-400 text-[10px] uppercase tracking-widest block mb-1">Emoji</label>
+                  <input type="text" id="ei-emoji-${index}" value="${escAttr(item.emoji || "")}" placeholder="🔗" />
+                </div>
+              </div>
+              ${!isFolder ? `
+              <div>
+                <label class="text-slate-400 text-[10px] uppercase tracking-widest block mb-1">URL</label>
+                <input type="text" id="ei-url-${index}" value="${escAttr(item.url || "")}" placeholder="https://..." />
+              </div>` : ""}
+              <div class="flex gap-2 pt-1">
+                <button onclick="cancelInlineEdit(${index})" class="flex-1 py-1 bg-slate-600 text-white rounded-lg text-xs font-bold hover:bg-slate-500">Cancel</button>
+                <button onclick="saveInlineEdit(${index})"   class="flex-1 py-1 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-500">Save</button>
+              </div>`;
+            li.appendChild(editDiv);
+          }
+          container.appendChild(li);
+        });
+      }
+
+      function escAttr(str) {
+        return (str || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      }
+
+      // =============================================
+      // INLINE EDIT ACTIONS
+      // =============================================
+      function startInlineEdit(index) {
+        if (editingIndex !== null && editingIndex !== index) cancelInlineEdit(editingIndex);
+        editingIndex = index;
+        document.getElementById(`edit-row-${index}`).classList.remove("hidden");
+        document.getElementById(`ei-name-${index}`).focus();
+      }
+      function cancelInlineEdit(index) {
+        const row = document.getElementById(`edit-row-${index}`);
+        if (row) row.classList.add("hidden");
+        editingIndex = null;
+      }
+      function saveInlineEdit(index) {
+        const item     = currentLevel[index];
+        const newName  = document.getElementById(`ei-name-${index}`).value.trim();
+        const newEmoji = document.getElementById(`ei-emoji-${index}`).value.trim();
+        const urlEl    = document.getElementById(`ei-url-${index}`);
+        const newUrl   = urlEl ? urlEl.value.trim() : null;
+        if (!newName) { alert("Name cannot be empty."); return; }
+        item.name  = newName;
+        item.emoji = newEmoji || null;
+        if (newUrl !== null) item.url = newUrl;
+        renderLinks(currentLevel);
+      }
+
+
+                                                                                  // EDIT MODE TOGGLE
+
+      function toggleEditMode() {
+        isEditMode = !isEditMode;
+        document.getElementById("edit-controls").classList.toggle("hidden");
+        document.getElementById("edit-mode-btn").classList.toggle("hidden");
+        renderLinks(currentLevel);
+      }
+
+
+                                                                                                // ADD MODAL
+
+      function openModal(mode) {
+        modalMode = mode;
+        modal.classList.add("modal-active");
+        document.getElementById("modal-title").innerText = mode === "folder" ? "Add Folder" : "Add Link";
+        document.getElementById("url-field").style.display = mode === "folder" ? "none" : "block";
+        document.getElementById("input-name").value  = "";
+        document.getElementById("input-url").value   = "";
+        document.getElementById("input-emoji").value = "";
+      }
+      function closeModal() { modal.classList.remove("modal-active"); }
+      function saveFromModal() {
+        const name  = document.getElementById("input-name").value.trim();
+        const url   = document.getElementById("input-url").value.trim();
+        const emoji = document.getElementById("input-emoji").value.trim();
+        if (!name) return;
+        if (modalMode === "folder") currentLevel.push({ name, emoji: emoji || null, children: [] });
+        else                        currentLevel.push({ name, url, emoji: emoji || null });
+        renderLinks(currentLevel);
+        closeModal();
+      }
+
+
+                                                                      // MOVE / DELETE
+
+      function moveItem(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= currentLevel.length) return;
+        [currentLevel[index], currentLevel[newIndex]] = [currentLevel[newIndex], currentLevel[index]];
+        renderLinks(currentLevel);
+      }
+      function deleteItem(index) {
+        if (confirm("Delete this item?")) { currentLevel.splice(index, 1); renderLinks(currentLevel); }
+      }
+      backBtn.onclick = () => { currentLevel = navHistory.pop(); renderLinks(currentLevel); };
+
+
+                                                                               // FETCH & DATA MANAGEMENT
+
+      function resetMain() {
+        currentSheet = "";
+        formDisplay.innerHTML = `<div class="flex flex-col items-center justify-center mt-24 text-slate-500 opacity-30 italic"><p class="text-xl uppercase tracking-widest">System Ready</p></div>`;
+      }
+
+      async function fetchAndDisplay(sheet) {
+        currentSheet = sheet;
+        formDisplay.innerHTML = `<div class="text-center mt-20 text-white animate-pulse uppercase tracking-widest">Accessing ${sheet}...</div>`;
+        try {
+          const response = await fetch(`${SCRIPT_URL}?sheet=${sheet}`);
+          rawData = await response.json();
+          sheet === "Notes" ? renderNotes(rawData) : renderReminders(rawData);
+        } catch (err) {
+          formDisplay.innerHTML = `<div class="text-red-400 text-center mt-20">Error: Please verify Apps Script Deployment.</div>`;
+        }
+      }
+
+      async function updateStatus(ts, sheet, newStatus) {
+        const btn = event.target;
+        btn.innerText = "Processing...";
+        btn.disabled  = true;
+        try {
+          await fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "update", timestamp: ts, targetSheet: sheet, newStatus }),
+          });
+          alert(`Marked as ${newStatus}`);
+          fetchAndDisplay(sheet);
+        } catch (err) {
+          alert("Update failed. Check your internet connection.");
+          btn.innerText = "Error";
+          btn.disabled  = false;
+        }
+      }
+
+
+                                                                            // RENDER NOTES
+
+      function renderNotes(data, filterText = "", showArchived = false) {
+        let filtered = data.filter(n => showArchived ? true : n.Status === "Active");
+        if (filterText) {
+          const term = filterText.toLowerCase();
+          filtered = filtered.filter(n =>
+            n.Title.toLowerCase().includes(term) || n.Comments.toLowerCase().includes(term));
+        }
+        formDisplay.innerHTML = `
+          <div class="mb-4 space-y-2">
+            <div class="flex gap-2">
+              <input type="text" id="note-search-box" placeholder="Search notes..." oninput="applyFilters('Notes')"
+                class="flex-grow p-3 rounded-xl bg-zinc-900 text-white border border-slate-500 outline-none focus:ring-2 ring-blue-500">
+              <select onchange="sortData('Notes', this.value)"
+                class="bg-slate-600 text-white p-3 rounded-xl outline-none border border-slate-500">
+                <option value="Newest">Newest</option><option value="Oldest">Oldest</option><option value="Due">By Due Date</option>
+              </select>
+            </div>
+            <label class="text-white text-xs flex items-center gap-2 px-2 cursor-pointer w-fit">
+              <input type="checkbox" id="note-arch-check" ${showArchived ? "checked" : ""} onchange="applyFilters('Notes')" class="w-4 h-4 rounded"> Show Archived
+            </label>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            ${filtered.map(n => `
+              <div class="bg-slate-800 p-4 rounded-xl border border-slate-600 shadow hover:border-blue-500 transition-colors cursor-pointer"
+                onclick="openDetail('${n.Title.replace(/'/g,"\\'")}', \`${n.Comments.replace(/`/g,"\\`")}\`, '${fmtDate(n.Timestamp)}', 'Due: ${fmtDueDate(n.DueDate)}')">
+                <div class="flex justify-between text-[10px] text-slate-500 mb-1 italic">
+                  <span>${fmtDate(n.Timestamp)}</span><span>Due: ${fmtDueDate(n.DueDate)}</span>
+                </div>
+                <h4 class="text-white font-bold mb-2 truncate uppercase text-sm">${n.Title}</h4>
+                <p class="text-slate-400 text-xs line-clamp-3 mb-4">${n.Comments}</p>
+                <div class="flex gap-2" onclick="event.stopPropagation()">
+                  <button onclick="copySnippet('${n.Title}','${n.Comments}','${fmtDueDate(n.DueDate)}','Note')"
+                    class="flex-1 py-1 bg-slate-700 text-white rounded text-[10px] uppercase font-bold hover:bg-blue-600 transition-colors">📋 Copy</button>
+                  <button onclick="updateStatus('${n.Timestamp}','Notes','Archived')"
+                    class="px-2 bg-slate-700 text-white rounded text-[10px] hover:bg-red-600">📦 Arch</button>
+                </div>
+              </div>`).join("")}
+          </div>`;
+        if (filterText) { const b = document.getElementById("note-search-box"); b.value = filterText; b.focus(); }
+      }
+
+      // =============================================
+      // RENDER REMINDERS
+      // =============================================
+      function renderReminders(data, filterText = "", showCompleted = false, typeFilter = "All") {
+        let filtered = data.filter(r => showCompleted ? true : r.Status === "Pending");
+        if (typeFilter !== "All") filtered = filtered.filter(r => r.Type === typeFilter);
+        if (filterText) {
+          const term = filterText.toLowerCase();
+          filtered = filtered.filter(r =>
+            r.Title.toLowerCase().includes(term) || r.Comments.toLowerCase().includes(term));
+        }
+        formDisplay.innerHTML = `
+          <div class="mb-4 space-y-2">
+            <div class="flex gap-2 overflow-visible">
+              <input type="text" id="rem-search-box" placeholder="Search reminders..." oninput="applyFilters('Reminders')"
+                class="flex-grow p-3 rounded-xl bg-zinc-900 text-white border border-slate-500 outline-none focus:ring-2 ring-yellow-500 m-1">
+              <select id="rem-type-filter" onchange="applyFilters('Reminders')"
+                class="bg-slate-600 text-white p-3 rounded-xl outline-none border border-slate-500 uppercase font-bold">
+                <option value="All">All Types</option><option>Task</option><option>Research</option><option>Meeting</option>
+              </select>
+            </div>
+            <label class="text-white text-xs flex items-center gap-2 px-2 cursor-pointer w-fit">
+              <input type="checkbox" id="rem-comp-check" ${showCompleted ? "checked" : ""} onchange="applyFilters('Reminders')" class="w-4 h-4 rounded"> Show Completed
+            </label>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            ${filtered.map(r => `
+              <div class="bg-slate-800 p-4 rounded-xl border-l-4 ${getPriColor(r.Priority)} shadow-lg hover:bg-slate-750 transition-all cursor-pointer"
+                onclick="openDetail('${r.Title.replace(/'/g,"\\'")}', \`${r.Comments.replace(/`/g,"\\`")}\`, '${fmtDate(r.Timestamp)}', 'Priority: ${r.Priority} | Type: ${r.Type}')">
+                <div class="flex justify-between text-[10px] font-black uppercase text-slate-500 mb-1">
+                  <span>${r.Type}</span><span class="${r.Priority === "Top" ? "text-red-500" : "text-slate-400"}">${r.Priority}</span>
+                </div>
+                <h4 class="text-white font-bold mb-1 truncate text-sm">${r.Title}</h4>
+                <p class="text-slate-400 text-xs line-clamp-2 mb-3">${r.Comments}</p>
+                <div class="flex justify-between items-center mt-auto pt-2 border-t border-slate-700" onclick="event.stopPropagation()">
+                  <span class="text-[9px] text-yellow-500 font-mono">DUE: ${fmtDueDate(r.DueDate)}</span>
+                  <div class="flex gap-1">
+                    <button onclick="copySnippet('${r.Title}','${r.Comments}','${fmtDueDate(r.DueDate)}','${r.Priority}')"
+                      class="p-1 bg-slate-700 rounded text-[10px] hover:bg-blue-500">📋</button>
+                    <button onclick="updateStatus('${r.Timestamp}','Reminders','Completed')"
+                      class="px-2 py-1 bg-green-700 text-white rounded text-[10px] font-bold uppercase hover:bg-green-600 transition-colors">Done</button>
+                  </div>
+                </div>
+              </div>`).join("")}
+          </div>`;
+        if (filterText) { const b = document.getElementById("rem-search-box"); b.value = filterText; b.focus(); }
+      }
+
+      function applyFilters(sheet) {
+  const searchVal  = sheet === "Notes"
+    ? document.getElementById("note-search-box").value
+    : document.getElementById("rem-search-box").value;
+  const isArchived = sheet === "Notes"
+    ? (document.getElementById("note-arch-check")?.checked || false)
+    : (document.getElementById("rem-comp-check")?.checked || false);
+  const typeFilter = sheet === "Reminders"
+    ? document.getElementById("rem-type-filter").value : "All";
+  if (sheet === "Notes") {
+    renderNotes(rawData, searchVal, isArchived);
+    setTimeout(() => {
+      const b = document.getElementById("note-search-box");
+      if (b) { b.value = searchVal; b.focus(); }
+      const cb = document.getElementById("note-arch-check");
+      if (cb) cb.checked = isArchived;
+    }, 0);
+  } else {
+    renderReminders(rawData, searchVal, isArchived, typeFilter);
+    const b = document.getElementById("rem-search-box"); b.value = searchVal; b.focus();
+    document.getElementById("rem-type-filter").value = typeFilter;
+  }
+}
+
+      function getPriColor(p) {
+        if (p === "Top" || p === "High") return "border-red-500";
+        if (p === "Medium") return "border-yellow-500";
+        return "border-blue-400";
+      }
+
+      function openDetail(title, content, date, extra = "") {
+        document.getElementById("detail-title").innerText = title;
+        document.getElementById("detail-meta").innerText  = `Created: ${date} | ${extra}`;
+        document.getElementById("detail-body").innerText  = content;
+        document.getElementById("detail-modal").classList.add("modal-active");
+      }
+      function closeDetail() {
+        document.getElementById("detail-modal").classList.remove("modal-active");
+      }
+      function copySnippet(title, comments, date, extra) {
+        navigator.clipboard.writeText(`[${extra}] ${title}: ${comments} (Due: ${date})`);
+        alert("Copied snippet to clipboard!");
+      }
+      function sortData(sheet, val) {
+        if (val === "Newest") rawData.sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+        if (val === "Oldest") rawData.sort((a,b) => new Date(a.Timestamp) - new Date(b.Timestamp));
+        if (val === "Due")    rawData.sort((a,b) => new Date(a.DueDate)   - new Date(b.DueDate));
+        sheet === "Notes" ? renderNotes(rawData) : renderReminders(rawData);
+      }
+
+      // =============================================
+      // NOTE / REMINDER FORMS
+      // =============================================
+      function showNoteForm() {
+        formDisplay.innerHTML = `<div class="active-form bg-slate-800 p-6 rounded-2xl border-2 border-blue-500/30 text-left">
+          <h3 class="text-blue-400 font-bold mb-4 uppercase text-xs tracking-tighter">New Scratchpad Note</h3>
+          <input type="text" id="note-title" placeholder="Title / Project Name"
+            class="w-full bg-zinc-900 text-white p-3 rounded-xl mb-4 border border-slate-600 outline-none focus:ring-2 ring-blue-500">
+          <textarea id="note-comments" placeholder="Take notes here..."
+            class="w-full h-64 bg-zinc-900 text-white p-3 rounded-xl mb-4 border border-slate-600 outline-none focus:ring-2 ring-blue-500 resize-none leading-relaxed"></textarea>
+          <div class="flex gap-4 items-center">
+            <input type="date" id="note-due" class="bg-zinc-900 text-white p-3 rounded-xl border border-slate-600 text-sm">
+            <button onclick="resetMain()" class="px-6 py-3 bg-slate-600 text-white rounded-xl font-bold">CANCEL</button>
+            <button onclick="saveNote()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 shadow-lg">SAVE TO SHEETS</button>
+          </div></div>`;
+        document.getElementById("note-title").focus();
+      }
+
+      function showReminderForm() {
+        formDisplay.innerHTML = `<div class="active-form bg-slate-800 p-6 rounded-2xl border-2 border-yellow-500/30 text-left">
+          <h3 class="text-yellow-400 font-bold mb-4 uppercase text-xs tracking-tighter">New Priority Reminder</h3>
+          <input type="text" id="rem-title" placeholder="Reminder Title..."
+            class="w-full bg-zinc-900 text-white p-3 rounded-xl mb-4 border border-slate-600 outline-none focus:ring-2 ring-yellow-500">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <select id="rem-type" class="bg-zinc-900 text-white p-3 rounded-xl border border-slate-600 outline-none">
+              <option>Task</option><option>Research</option><option>Meeting</option><option>Follow-up</option>
+            </select>
+            <select id="rem-priority" class="bg-zinc-900 text-white p-3 rounded-xl border border-slate-600 outline-none">
+              <option>Low</option><option selected>Medium</option><option>High</option><option>Top</option>
+            </select>
+          </div>
+          <textarea id="rem-comments" placeholder="Details..."
+            class="w-full h-32 bg-zinc-900 text-white p-3 rounded-xl mb-4 border border-slate-600 outline-none focus:ring-2 ring-yellow-500 resize-none"></textarea>
+          <div class="flex gap-4 items-center">
+            <input type="date" id="rem-due" class="bg-zinc-900 text-white p-3 rounded-xl border border-slate-600 text-sm flex-1">
+            <button onclick="resetMain()" class="px-6 py-3 bg-slate-600 text-white rounded-xl font-bold">CANCEL</button>
+            <button onclick="saveReminder()" class="flex-1 py-3 bg-yellow-600 text-black rounded-xl font-bold hover:bg-yellow-500 shadow-lg">CREATE REMINDER</button>
+          </div></div>`;
+        document.getElementById("rem-title").focus();
+      }
+
+      async function sendToSheet(payload) {
+        try {
+          await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+          alert("Saved to Database!");
+          fetchAndDisplay(payload.targetSheet);
+        } catch (err) {
+          alert("Error Syncing. Please check connection.");
+        }
+      }
+
+      function saveNote() {
+        const title    = document.getElementById("note-title").value;
+        const comments = document.getElementById("note-comments").value;
+        const dueDate  = document.getElementById("note-due").value;
+        if (!title || !comments) return alert("Please enter both a Title and Comments.");
+        sendToSheet({
+          action: "new", targetSheet: "Notes",
+          timestamp: new Date().toLocaleString("en-US", { month: "numeric", day: "numeric", year: "2-digit", hour: "numeric", minute: "2-digit", hour12: true }),
+          title, comments, dueDate: dueDate || "None",
+        });
+      }
+
+      function saveReminder() {
+        const title = document.getElementById("rem-title").value;
+        if (!title) return alert("Title required");
+        sendToSheet({
+          action: "new", targetSheet: "Reminders",
+          timestamp: new Date().toLocaleString("en-US", { month: "numeric", day: "numeric", year: "2-digit", hour: "numeric", minute: "2-digit", hour12: true }),
+          title,
+          type:     document.getElementById("rem-type").value,
+          priority: document.getElementById("rem-priority").value,
+          dueDate:  document.getElementById("rem-due").value || "None",
+          comments: document.getElementById("rem-comments").value || "N/A",
+        });
+      }
+
+      // =============================================
+      // UTILS
+      // =============================================
+      function updateTime() {
+        document.getElementById("datetime").textContent = new Date().toLocaleString(undefined, {
+          weekday: "long", year: "numeric", month: "long", day: "numeric",
+          hour: "numeric", minute: "2-digit",
+        });
+      }
+      setInterval(updateTime, 60000);
+      updateTime();
+
+      function updateMap(e) {
+        e.preventDefault();
+        const query = encodeURIComponent(document.getElementById("mapInput").value);
+        document.getElementById("mapFrame").src = `https://maps.google.com/maps?q=${query}&output=embed&hl=en`;      }
+
+      // =============================================
+      // INIT
+      // =============================================
+      renderLinks(linksTree);
+      renderCal();
+      document.getElementById("mapFrame").src = "https://maps.google.com/maps?q=Philadelphia,PA&output=embed&hl=en";
+      !(function(d,s,id){
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (!d.getElementById(id)) {
+          js = d.createElement(s); js.id = id;
+          js.src = "https://weatherwidget.io/js/widget.min.js";
+          fjs.parentNode.insertBefore(js, fjs);
+        }
+      })(document, "script", "weatherwidget-io-js");
+    </script>
+  </body>
+</html>

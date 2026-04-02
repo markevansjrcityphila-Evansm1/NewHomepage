@@ -1,10 +1,5 @@
 [
   {
-    "name": "Atlas",
-    "emoji": "🗺️",
-    "url": "https://atlas.phila.gov/"
-  },
-  {
     "name": "Operations",
     "emoji": "💼",
     "children": [
@@ -22,14 +17,14 @@
                 "emoji": "💻"
               },
               {
-                "name": "Config Production",
-                "url": "https://eclipseprod.phila.gov/phillylmsprod/int/config/Login.aspx",
-                "emoji": "⚙️"
-              },
-              {
                 "name": "Public Production",
                 "url": "https://eclipse.phila.gov/phillylmsprod/pub/lms/Login.aspx",
                 "emoji": "🚻"
+              },
+              {
+                "name": "Config Production",
+                "url": "https://eclipseprod.phila.gov/phillylmsprod/int/config/Login.aspx",
+                "emoji": "⚙️"
               }
             ]
           },
@@ -40,17 +35,17 @@
               {
                 "name": "Internal Test",
                 "url": "https://eclipsetest-int.phila.gov/phluatest/int/lms/#menuPaneUseKey=1013343_2",
-                "emoji": null
+                "emoji": "💻"
               },
               {
                 "name": "Public Test",
                 "url": "https://eclipsetest-ext.phila.gov/phluatest/pub/lms/Login.aspx",
-                "emoji": null
+                "emoji": "🚻"
               },
               {
                 "name": "Config Test",
                 "url": "https://eclipsetest-int.phila.gov/phluatest/int/config/Login.aspx",
-                "emoji": null
+                "emoji": "⚙️"
               }
             ]
           },
@@ -61,24 +56,45 @@
               {
                 "name": "Internal Training",
                 "url": "https://eclipsetest-int.phila.gov/phltraining/int/lms/#menuPaneUseKey=1013343_2",
-                "emoji": null
+                "emoji": "💻"
               },
               {
                 "name": "Public Training",
                 "url": "https://eclipsetest-ext.phila.gov/phltraining/pub/lms/Login.aspx",
-                "emoji": null
+                "emoji": "🚻"
               },
               {
                 "name": "Config Training",
                 "url": "https://eclipsetest-int.phila.gov/phltraining/int/config/Login.aspx",
-                "emoji": null
+                "emoji": "⚙️"
               },
               {
                 "name": "WebUi",
                 "url": "https://eclipsetest-ext.phila.gov/phltraining/pub/webui/#",
-                "emoji": null
+                "emoji": "🌐"
               }
             ]
+          }
+        ]
+      },
+      {
+        "name": "Mobile App",
+        "emoji": "📱",
+        "children": [
+          {
+            "name": "Insight Production",
+            "url": "https://phila.myatlasinsight.com/LCI/Atlas.Insight/#login",
+            "emoji": "📲"
+          },
+          {
+            "name": "Insight Test",
+            "url": "https://philatest.myatlasinsight.com/LCI/Atlas.Insight/#login",
+            "emoji": "⚗️"
+          },
+          {
+            "name": "Relay (IVR)",
+            "url": "https://www.myrelayportal.com/#login",
+            "emoji": "📞"
           }
         ]
       }
@@ -119,5 +135,73 @@
         "emoji": "🌊"
       }
     ]
+  },
+  {
+    "name": "Time",
+    "emoji": "⏱️",
+    "children": [
+      {
+        "name": "Kronos",
+        "url": "https://philalni.kronos.net/wfcstatic/applications/navigator/html5/dist/container/index.html?version=8.1.9.392#/",
+        "emoji": "🕗"
+      },
+      {
+        "name": "One Philly",
+        "url": "https://ess-onephilly.phila.gov/OA_HTML/AppsLocalLogin.jsp",
+        "emoji": "💵"
+      },
+      {
+        "name": "Leave Balance Tracker",
+        "url": "https://marke63ward.github.io/Leave-Balance-Tracker/",
+        "emoji": "🗓️"
+      },
+      {
+        "name": "Employee Earnings",
+        "url": "https://marke63ward.github.io/employee-salary-lookup/",
+        "emoji": "💰"
+      }
+    ]
+  },
+  {
+    "name": "Philly Sites",
+    "emoji": "🔔",
+    "children": [
+      {
+        "name": "L&I Site",
+        "url": "https://www.phila.gov/departments/department-of-licenses-and-inspections/",
+        "emoji": "🏛️"
+      },
+      {
+        "name": "Service Directory",
+        "url": "https://www.phila.gov/services/",
+        "emoji": "📇"
+      },
+      {
+        "name": "Legislation",
+        "url": "https://phila.legistar.com/Legislation.aspx",
+        "emoji": "⚖️"
+      },
+      {
+        "name": "Phila Dox",
+        "url": "https://epay.phila-records.com/phillyepay/web/login.jsp?submit=I+Acknowledge",
+        "emoji": "📜"
+      }
+    ]
+  },
+  {
+    "name": "Codes",
+    "emoji": "🏗️",
+    "children": [
+      {
+        "name": "Philly Code",
+        "url": "https://codelibrary.amlegal.com/codes/philadelphia/latest/overview",
+        "emoji": "📜"
+      }
+    ]
+  },
+  {
+    "name": "Learning/Training",
+    "emoji": "📚",
+    "children": []
   }
 ]

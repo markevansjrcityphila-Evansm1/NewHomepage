@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Posse Production",
+    "emoji": "🏢",
+    "children": [
+      {
+        "name": "Production Internal",
+        "url": "https://eclipseprod.phila.gov/phillylmsprod/int/lms/"
+      },
+      {
+        "name": "Production Public",
+        "url": "https://eclipse.phila.gov/phillylmsprod/pub/lms/"
+      }
+    ]
+  },
+  {
+    "name": "Atlas",
+    "emoji": "🗺️",
+    "url": "https://atlas.phila.gov/"
+  }
+]
